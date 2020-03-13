@@ -88,9 +88,10 @@ class Parser:
 #---------------------------------
 
 #Settings            
-delayBetween2Conv = 50000
-nbMessages = 10
+delayBetween2Conv = 50000 #in milliseconds
+nbMessages = 100
+fbConvFilename = 'conversation_LouisRiad.json'
 
 #Parser launching...
-parser = Parser('conversation_LouisRiad.json', nbMessages, delayBetween2Conv)
+parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv)
 parser.start()
