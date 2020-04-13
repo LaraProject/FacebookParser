@@ -10,11 +10,12 @@ class Parser:
     delayBetween2Conv = 0
     nbMessages = 0
     
-    def __init__(self, fileName, nbMessages, delayBetween2Conv):
+    def __init__(self, fileName, nbMessages, delayBetween2Conv, withTimestamp=True):
         print('Parser launching...')
 
         self.delayBetween2Conv = delayBetween2Conv
-        
+        self.withTimestamp = withTimestamp
+
         with open(fileName) as json_file:
             self.dataRaw = json.load(json_file)
 
@@ -40,12 +41,19 @@ class Parser:
             while timestamp == 0:
                 #Test if the current entry is a message (if not, the script below returns an error)
                 try:
-                    self.conversations['messages'].append({
-                        'sender_name': self.dataRaw['messages'][0]['sender_name'],
-                        'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
-                        'timestamp': self.dataRaw['messages'][0]['timestamp_ms'],
-                        'conversationId': conversationId
-                    })
+                    if self.withTimestamp:
+                        self.conversations['messages'].append({
+                            'sender_name': self.dataRaw['messages'][0]['sender_name'],
+                            'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
+                            'timestamp': self.dataRaw['messages'][0]['timestamp_ms'],
+                            'conversationId': conversationId
+                        })
+                    else:
+                        self.conversations['messages'].append({
+                            'sender_name': self.dataRaw['messages'][0]['sender_name'],
+                            'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
+                            'conversationId': conversationId
+                        })
 
                     timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
                 except:
@@ -60,12 +68,19 @@ class Parser:
                     #Update timestamp
                     timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
                     
-                    self.conversations['messages'].append({
-                        'sender_name': self.dataRaw['messages'][k]['sender_name'],
-                        'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
-                        'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
-                        'conversationId': conversationId
-                    })
+                    if self.withTimestamp:
+                        self.conversations['messages'].append({
+                            'sender_name': self.dataRaw['messages'][k]['sender_name'],
+                            'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
+                            'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
+                            'conversationId': conversationId
+                        })
+                    else:
+                        self.conversations['messages'].append({
+                            'sender_name': self.dataRaw['messages'][k]['sender_name'],
+                            'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
+                            'conversationId': conversationId
+                        })
                 except:
                     pass
 
