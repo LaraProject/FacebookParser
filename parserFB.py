@@ -34,6 +34,8 @@ class Parser:
             self.conversations['speakers'].append(p['name'])
 
         conversationId = 0
+        subConversationId = 0
+        lastSender = ""
         timestamp = 0
 
         # Sort messages according to their timestamp
@@ -48,16 +50,19 @@ class Parser:
                         'sender_name': self.dataRaw['messages'][0]['sender_name'],
                         'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
                         'timestamp': self.dataRaw['messages'][0]['timestamp_ms'],
-                        'conversationId': conversationId
+                        'conversationId': conversationId,
+                        'subConversationId': subConversationId
                     })
                 else:
                     self.conversations['messages'].append({
                         'sender_name': self.dataRaw['messages'][0]['sender_name'],
                         'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
-                        'conversationId': conversationId
+                        'conversationId': conversationId,
+                        'subConversationId': subConversationId
                     })
 
                 timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
+                lastSender = self.dataRaw['messages'][0]['sender_name']
             except:
                 pass
 
@@ -67,8 +72,16 @@ class Parser:
                 # Get the number of the conversation
                 if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
                     conversationId += 1
+                    subConversationId = 0
+
                 # Update timestamp
                 timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
+
+                # Update subconversation id
+                if (lastSender != self.dataRaw['messages'][k]['sender_name']):
+                    lastSender = self.dataRaw['messages'][k]['sender_name']
+                    subConversationId += 1
+
 
                 if self.withTimestamp:
                     self.conversations['messages'].append({
@@ -76,12 +89,14 @@ class Parser:
                         'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
                         'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
                         'conversationId': conversationId,
+                        'subConversationId': subConversationId
                     })
                 else:
                     self.conversations['messages'].append({
                         'sender_name': self.dataRaw['messages'][k]['sender_name'],
                         'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
-                        'conversationId': conversationId
+                        'conversationId': conversationId,
+                        'subConversationId': subConversationId
                     })
             except:
                 pass
