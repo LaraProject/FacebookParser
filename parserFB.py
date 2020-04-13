@@ -13,11 +13,12 @@ class Parser:
     def __init__(self, fileName, nbMessages, delayBetween2Conv):
         print('Parser launching...')
 
-        self.nbMessages = nbMessages
         self.delayBetween2Conv = delayBetween2Conv
         
         with open(fileName) as json_file:
             self.dataRaw = json.load(json_file)
+
+        self.nbMessages = min(nbMessages,len(self.dataRaw['messages']))
 
     def start(self):
             self.speakers['speakers'] = []
