@@ -106,8 +106,8 @@ class Parser:
             return 0
 
     #Export the final .json file
-    def finalDump(self):
-        with open('final2.txt', 'w') as outfile:
+    def finalDump(self, filename):
+        with open(filename, 'w') as outfile:
             json.dump(self.conversations, outfile)
 
 
