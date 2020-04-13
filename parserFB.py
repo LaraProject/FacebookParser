@@ -32,6 +32,9 @@ class Parser:
             conversationId = 0
             timestamp = 0
 
+            # Sort messages according to their timestamp
+            self.dataRaw['messages'].sort(key=self.extract_time)
+
             #Get first timestamp
             while timestamp == 0:
                 #Test if the current entry is a message (if not, the script below returns an error)
@@ -65,9 +68,6 @@ class Parser:
                 except:
                     pass
 
-            # Sort messages according to their timestamp
-            self.conversations['messages'].sort(key=self.extract_time)
-
             print(self.conversations)
             #print(self.speakers)
 
@@ -85,7 +85,7 @@ class Parser:
     # Get the timestamp
     def extract_time(self, msg):
         try:
-            return int(msg['timestamp'])
+            return int(msg['timestamp_ms'])
         except KeyError:
             return 0
 
