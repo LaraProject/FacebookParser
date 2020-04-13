@@ -3,13 +3,15 @@ import re
 import ftfy
 import unidecode
 
+
 class Parser:
+
     dataRaw = {}
     conversations = {}
     speakers = {}
     delayBetween2Conv = 0
     nbMessages = 0
-    
+
     def __init__(self, fileName, nbMessages, delayBetween2Conv, withTimestamp=True):
         print('Parser launching...')
 
@@ -19,83 +21,82 @@ class Parser:
         with open(fileName) as json_file:
             self.dataRaw = json.load(json_file)
 
-        self.nbMessages = min(nbMessages,len(self.dataRaw['messages']))
+        self.nbMessages = min(nbMessages, len(self.dataRaw['messages']))
 
     def start(self):
-            self.speakers['speakers'] = []
-            self.conversations['speakers'] = []
-            self.conversations['messages'] = []
-            
-            #Storing speaker's names
-            for p in self.dataRaw['participants']:
-                self.speakers['speakers'].append(p['name'])
-                self.conversations['speakers'].append(p['name'])
+        self.speakers['speakers'] = []
+        self.conversations['speakers'] = []
+        self.conversations['messages'] = []
 
-            conversationId = 0
-            timestamp = 0
+        # Storing speaker's names
+        for p in self.dataRaw['participants']:
+            self.speakers['speakers'].append(p['name'])
+            self.conversations['speakers'].append(p['name'])
 
-            # Sort messages according to their timestamp
-            self.dataRaw['messages'].sort(key=self.extract_time)
+        conversationId = 0
+        timestamp = 0
 
-            #Get first timestamp
-            while timestamp == 0:
-                #Test if the current entry is a message (if not, the script below returns an error)
-                try:
-                    if self.withTimestamp:
-                        self.conversations['messages'].append({
-                            'sender_name': self.dataRaw['messages'][0]['sender_name'],
-                            'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
-                            'timestamp': self.dataRaw['messages'][0]['timestamp_ms'],
-                            'conversationId': conversationId
-                        })
-                    else:
-                        self.conversations['messages'].append({
-                            'sender_name': self.dataRaw['messages'][0]['sender_name'],
-                            'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
-                            'conversationId': conversationId
-                        })
+        # Sort messages according to their timestamp
+        self.dataRaw['messages'].sort(key=self.extract_time)
 
-                    timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
-                except:
-                    pass
-                
-            #Storing and detecting conversations
-            for k in range(1, self.nbMessages):
-                try:
-                    if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv: 
-                        conversationId += 1
+        # Get first timestamp
+        while timestamp == 0:
+            # Test if the current entry is a message (if not, the script below returns an error)
+            try:
+                if self.withTimestamp:
+                    self.conversations['messages'].append({
+                        'sender_name': self.dataRaw['messages'][0]['sender_name'],
+                        'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
+                        'timestamp': self.dataRaw['messages'][0]['timestamp_ms'],
+                        'conversationId': conversationId
+                    })
+                else:
+                    self.conversations['messages'].append({
+                        'sender_name': self.dataRaw['messages'][0]['sender_name'],
+                        'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
+                        'conversationId': conversationId
+                    })
 
-                    #Update timestamp
-                    timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
-                    
-                    if self.withTimestamp:
-                        self.conversations['messages'].append({
-                            'sender_name': self.dataRaw['messages'][k]['sender_name'],
-                            'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
-                            'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
-                            'conversationId': conversationId
-                        })
-                    else:
-                        self.conversations['messages'].append({
-                            'sender_name': self.dataRaw['messages'][k]['sender_name'],
-                            'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
-                            'conversationId': conversationId
-                        })
-                except:
-                    pass
+                timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
+            except:
+                pass
 
-            print(self.conversations)
-            #print(self.speakers)
+        # Storing and detecting conversations
+        for k in range(1, self.nbMessages):
+            try:
+                # Get the number of the conversation
+                if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
+                    conversationId += 1
+                # Update timestamp
+                timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
 
-    #Cleaning message method
+                if self.withTimestamp:
+                    self.conversations['messages'].append({
+                        'sender_name': self.dataRaw['messages'][k]['sender_name'],
+                        'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
+                        'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
+                        'conversationId': conversationId,
+                    })
+                else:
+                    self.conversations['messages'].append({
+                        'sender_name': self.dataRaw['messages'][k]['sender_name'],
+                        'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
+                        'conversationId': conversationId
+                    })
+            except:
+                pass
+
+        print(self.conversations)
+        # print(self.speakers)
+
+    # Cleaning message method
     def cleanMessage(self, message):
         messageCleaned = ftfy.fix_text(message)
         messageCleaned = unidecode.unidecode(messageCleaned)
         messageCleaned = messageCleaned.lower()
-        messageCleaned = re.sub(r"[-()^\"#/@;:<>{}`+=~|.!?,]", "", messageCleaned)
+        messageCleaned = re.sub(r"[-()^\"#/@;:<>{}`+=~|.!?,]", '', messageCleaned)
 
-        #print(messageCleaned)
-        
+        # print(messageCleaned)
         return messageCleaned
 
     # Get the timestamp
@@ -105,19 +106,21 @@ class Parser:
         except KeyError:
             return 0
 
-    #Export the final .json file
+    # Export the final .json file
     def finalDump(self, filename):
         with open(filename, 'w') as outfile:
             json.dump(self.conversations, outfile)
 
 
-#---------------------------------
+# ---------------------------------
 
-#Settings            
-delayBetween2Conv = 50000 #in milliseconds
+# Settings
+
+delayBetween2Conv = 50000  # in milliseconds
 nbMessages = 100
 fbConvFilename = 'conversation_LouisRiad.json'
 
-#Parser launching...
+# Parser launching...
+
 parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv)
 parser.start()
