@@ -45,26 +45,11 @@ class Parser:
         while timestamp == 0:
             # Test if the current entry is a message (if not, the script below returns an error)
             try:
-                if self.withTimestamp:
-                    self.conversations['messages'].append({
-                        'sender_name': self.dataRaw['messages'][0]['sender_name'],
-                        'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
-                        'timestamp': self.dataRaw['messages'][0]['timestamp_ms'],
-                        'conversationId': conversationId,
-                        'subConversationId': subConversationId
-                    })
-                else:
-                    self.conversations['messages'].append({
-                        'sender_name': self.dataRaw['messages'][0]['sender_name'],
-                        'content': self.cleanMessage(self.dataRaw['messages'][0]['content']),
-                        'conversationId': conversationId,
-                        'subConversationId': subConversationId
-                    })
-
+                self.conversations['messages'].append(self.getMsg(0, 0, 0))
                 timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
                 lastSender = self.dataRaw['messages'][0]['sender_name']
             except:
-                pass
+                print("paserFB: Initialize with the " + str(k) + "-th message.")
 
         # Storing and detecting conversations
         for k in range(1, self.nbMessages):
@@ -82,34 +67,41 @@ class Parser:
                     lastSender = self.dataRaw['messages'][k]['sender_name']
                     subConversationId += 1
 
-
-                if self.withTimestamp:
-                    self.conversations['messages'].append({
-                        'sender_name': self.dataRaw['messages'][k]['sender_name'],
-                        'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
-                        'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
-                        'conversationId': conversationId,
-                        'subConversationId': subConversationId
-                    })
-                else:
-                    self.conversations['messages'].append({
-                        'sender_name': self.dataRaw['messages'][k]['sender_name'],
-                        'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
-                        'conversationId': conversationId,
-                        'subConversationId': subConversationId
-                    })
+                self.conversations['messages'].append(self.getMsg(k, conversationId, subConversationId))
             except:
-                pass
+                print("parserFB: Problem when storing the " + str(k) + "-th message.")
 
-        print(self.conversations)
+        # print(self.conversations)
         # print(self.speakers)
+
+    # Get k-th message
+    def getMsg(self, k, conversationId, subConversationId):
+        try:
+            if self.withTimestamp:
+                msg = {
+                    'sender_name': self.dataRaw['messages'][k]['sender_name'],
+                    'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
+                    'timestamp': self.dataRaw['messages'][k]['timestamp_ms'],
+                    'conversationId': conversationId,
+                    'subConversationId': subConversationId
+                }
+            else:
+                msg = {
+                    'sender_name': self.dataRaw['messages'][k]['sender_name'],
+                    'content': self.cleanMessage(self.dataRaw['messages'][k]['content']),
+                    'conversationId': conversationId,
+                    'subConversationId': subConversationId
+                }
+            return msg
+        except:
+            print("paserFB: Impossible to get the " + str(k) + "-th message")
 
     # Cleaning message method
     def cleanMessage(self, message):
         messageCleaned = ftfy.fix_text(message)
         messageCleaned = unidecode.unidecode(messageCleaned)
         messageCleaned = messageCleaned.lower()
-        messageCleaned = re.sub(r"[-()^\"#/@;:<>{}`+=~|.!?,]", '', messageCleaned)
+        # messageCleaned = re.sub(r"[-()^\"#/@;:<>{}`+=~|.!?,]", '', messageCleaned)
 
         # print(messageCleaned)
         return messageCleaned
@@ -130,7 +122,7 @@ class Parser:
 # ---------------------------------
 
 # Settings
-
+ 
 delayBetween2Conv = 50000  # in milliseconds
 nbMessages = 100
 fbConvFilename = 'conversation_LouisRiad.json'
