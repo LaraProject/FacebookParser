@@ -64,7 +64,10 @@ class Parser:
                     })
                 except:
                     pass
-                
+
+            # Sort messages according to their timestamp
+            self.conversations['messages'].sort(key=self.extract_time)
+
             print(self.conversations)
             #print(self.speakers)
 
@@ -78,6 +81,13 @@ class Parser:
         #print(messageCleaned)
         
         return messageCleaned
+
+    # Get the timestamp
+    def extract_time(self, msg):
+        try:
+            return int(msg['timestamp'])
+        except KeyError:
+            return 0
 
     #Export the final .json file
     def finalDump(self):
