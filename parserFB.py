@@ -9,6 +9,7 @@ class Parser:
     dataRaw = {}
     conversations = {}
     speakers = {}
+    conv_blacklist = []
     delayBetween2Conv = 0
     nbMessages = 0
 
@@ -45,7 +46,9 @@ class Parser:
         while timestamp == 0:
             # Test if the current entry is a message (if not, the script below returns an error)
             try:
-                self.conversations['messages'].append(self.getMsg(0, 0, 0))
+                msg = self.getMsg(0, 0, 0)
+                if not (msg == None):
+                    self.conversations['messages'].append(msg)
                 timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
                 lastSender = self.dataRaw['messages'][0]['sender_name']
             except:
@@ -67,12 +70,22 @@ class Parser:
                     lastSender = self.dataRaw['messages'][k]['sender_name']
                     subConversationId += 1
 
-                self.conversations['messages'].append(self.getMsg(k, conversationId, subConversationId))
+                # Add message to the list
+                next_msg = self.getMsg(k, conversationId, subConversationId)
+                if not (next_msg == None):
+                    self.conversations['messages'].append(next_msg)
             except:
                 print("parserFB: Problem when storing the " + str(k) + "-th message.")
 
+        # Apply the blacklist
+        self.applyBlacklist()
+
         # print(self.conversations)
         # print(self.speakers)
+
+    # Remove any conversation from the blacklist
+    def applyBlacklist(self):
+        self.conversations['messages'] = [x for x in self.conversations['messages'] if x['conversationId'] not in self.conv_blacklist]
 
     # Get k-th message
     def getMsg(self, k, conversationId, subConversationId):
@@ -95,6 +108,9 @@ class Parser:
             return msg
         except:
             print("paserFB: Impossible to get the " + str(k) + "-th message")
+            # Add this conversation to the blacklist
+            self.conv_blacklist.append(conversationId)
+            return None
 
     # Cleaning message method
     def cleanMessage(self, message):
