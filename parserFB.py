@@ -9,7 +9,6 @@ class Parser:
     dataRaw = {}
     conversations = {}
     speakers = {}
-    conv_blacklist = []
     delayBetween2Conv = 0
     nbMessages = 0
 
@@ -38,8 +37,6 @@ class Parser:
             self.speakers['speakers'].append(p['name'])
             self.conversations['speakers'].append(p['name'])
 
-        conversationId = 0
-        subConversationId = 0
         lastSender = ""
         timestamp = 0
 
@@ -62,12 +59,26 @@ class Parser:
                     pass
 
         # Storing and detecting conversations
+        conversationId = 0
+        subConversationId = 0
+        ignoreConversation = -1
         for k in range(1, self.nbMessages):
             try:
                 # Get the number of the conversation
                 if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
+                    # Check if the previous conversation was a monologue
+                    if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
+                        self.removeConv(conversationId)
                     conversationId += 1
-                    subConversationId = 0
+                    if (lastSender != self.dataRaw['messages'][k]['sender_name']):
+                        subConversationId = -1
+                    else:
+                        subConversationId = 0
+                    ignoreConversation = -1
+
+                # Ignore some conversation
+                if (conversationId == ignoreConversation):
+                    continue
 
                 # Update timestamp
                 timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
@@ -79,7 +90,11 @@ class Parser:
 
                 # Add message to the list
                 next_msg = self.getMsg(k, conversationId, subConversationId)
-                if not (next_msg == None):
+                # Remove conversations contaning invalid messages
+                if (isinstance(next_msg, int)):
+                    self.removeConv(conversationId)
+                    ignoreConversation = conversationId
+                else:
                     self.conversations['messages'].append(next_msg)
             except:
                 if self.debug:
@@ -87,38 +102,19 @@ class Parser:
                 else:
                     pass
 
-        # Add monologues to the blacklist
-        self.removeMonologues()
-
-        # Apply the blacklist
-        self.applyBlacklist()
-
         # print(self.conversations)
         # print(self.speakers)
 
-    # Remove any conversation from the blacklist
-    def applyBlacklist(self):
-        self.conversations['messages'] = [x for x in self.conversations['messages'] if x['conversationId'] not in self.conv_blacklist]
+    # Remove a conversation after it got added
+    def removeConv(self, conv_id):
+        found_conversation = False
+        for conv in range(len(self.conversations['messages'])-1,-1,-1):
+            if (self.conversations['messages'][conv]['conversationId'] == conv_id):
+                found_conversation = True
+                del self.conversations['messages'][conv]
+            elif found_conversation:
+                break
 
-    # Remove monologues
-    def removeMonologues(self):
-        to_remove = []
-        prev_conv = self.conversations['messages'][0]['conversationId']
-        prev_subconv = self.conversations['messages'][0]['subConversationId']
-        length = 1
-        for k in range(1,len(self.conversations['messages'])):
-            cur_conv = self.conversations['messages'][k]['conversationId']
-            cur_subconv = self.conversations['messages'][k]['subConversationId']
-            if (cur_conv != prev_conv):
-                if length < 2:
-                    to_remove.append(prev_conv)
-                length = 1
-            else:
-                if (cur_subconv != prev_subconv):
-                    length += 1
-            prev_conv = cur_conv
-            prev_subconv = cur_subconv
-        self.conv_blacklist = self.conv_blacklist + to_remove
 
     # Get k-th message
     def getMsg(self, k, conversationId, subConversationId):
@@ -142,9 +138,8 @@ class Parser:
         except:
             if self.debug:
                 print("paserFB: Impossible to get the " + str(k) + "-th message")
-            # Add this conversation to the blacklist
-            self.conv_blacklist.append(conversationId)
-            return None
+            # Report this message as invalid
+            return conversationId
 
     # Cleaning message method
     def cleanMessage(self, message):
