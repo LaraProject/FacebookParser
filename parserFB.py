@@ -77,6 +77,9 @@ class Parser:
             except:
                 print("parserFB: Problem when storing the " + str(k) + "-th message.")
 
+        # Add monologues to the blacklist
+        self.removeMonologues()
+
         # Apply the blacklist
         self.applyBlacklist()
 
@@ -86,6 +89,26 @@ class Parser:
     # Remove any conversation from the blacklist
     def applyBlacklist(self):
         self.conversations['messages'] = [x for x in self.conversations['messages'] if x['conversationId'] not in self.conv_blacklist]
+
+    # Remove monologues
+    def removeMonologues(self):
+        to_remove = []
+        prev_conv = self.conversations['messages'][0]['conversationId']
+        prev_subconv = self.conversations['messages'][0]['subConversationId']
+        length = 1
+        for k in range(1,len(self.conversations['messages'])):
+            cur_conv = self.conversations['messages'][k]['conversationId']
+            cur_subconv = self.conversations['messages'][k]['subConversationId']
+            if (cur_conv != prev_conv):
+                if length < 2:
+                    to_remove.append(prev_conv)
+                length = 1
+            else:
+                if (cur_subconv != prev_subconv):
+                    length += 1
+            prev_conv = cur_conv
+            prev_subconv = cur_subconv
+        self.conv_blacklist = self.conv_blacklist + to_remove
 
     # Get k-th message
     def getMsg(self, k, conversationId, subConversationId):
