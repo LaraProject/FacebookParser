@@ -13,11 +13,15 @@ class Parser:
     delayBetween2Conv = 0
     nbMessages = 0
 
-    def __init__(self, fileName, nbMessages, delayBetween2Conv, withTimestamp=True):
-        print('Parser launching...')
+    def __init__(self, fileName, nbMessages, delayBetween2Conv, withTimestamp=True, debug=False):
+        self.debug = debug
+
+        if self.debug:
+            print('Parser launching...')
 
         self.delayBetween2Conv = delayBetween2Conv
         self.withTimestamp = withTimestamp
+        self.debug = debug
 
         with open(fileName) as json_file:
             self.dataRaw = json.load(json_file)
@@ -52,7 +56,10 @@ class Parser:
                 timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
                 lastSender = self.dataRaw['messages'][0]['sender_name']
             except:
-                print("paserFB: Initialize with the " + str(k) + "-th message.")
+                if self.debug:
+                    print("paserFB: Initialize with the " + str(k) + "-th message.")
+                else:
+                    pass
 
         # Storing and detecting conversations
         for k in range(1, self.nbMessages):
@@ -75,7 +82,10 @@ class Parser:
                 if not (next_msg == None):
                     self.conversations['messages'].append(next_msg)
             except:
-                print("parserFB: Problem when storing the " + str(k) + "-th message.")
+                if self.debug:
+                    print("parserFB: Problem when storing the " + str(k) + "-th message.")
+                else:
+                    pass
 
         # Add monologues to the blacklist
         self.removeMonologues()
@@ -130,7 +140,8 @@ class Parser:
                 }
             return msg
         except:
-            print("paserFB: Impossible to get the " + str(k) + "-th message")
+            if self.debug:
+                print("paserFB: Impossible to get the " + str(k) + "-th message")
             # Add this conversation to the blacklist
             self.conv_blacklist.append(conversationId)
             return None
@@ -154,6 +165,8 @@ class Parser:
 
     # Export the final .json file
     def finalDump(self, filename):
+        if self.debug:
+            print('Dumping ...')
         with open(filename, 'w') as outfile:
             json.dump(self.conversations, outfile)
 
