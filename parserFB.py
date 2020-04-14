@@ -176,6 +176,27 @@ def optimalInterval(fbConvFilename, nbMessages, step_ms, min_duration_ms, max_du
         print(data)
     return best[1]
 
+# Get the number of messages per day
+from datetime import datetime
+from itertools import groupby
+import matplotlib.pyplot as plt
+def msgPerDay(filenames):
+    timestamps = []
+    for filename in filenames:
+        with open(filename) as json_file:
+            dataRaw = json.load(json_file)
+            timestamps += [datetime.fromtimestamp(float(msg['timestamp_ms'])/1000.) for msg in dataRaw['messages']]
+    timestamps = sorted(list(dict.fromkeys(timestamps)))
+    print("From " + min(timestamps).strftime("%d/%m/%Y") + " to "  + max(timestamps).strftime("%d/%m/%Y"))
+    res = [list(v) for i, v in groupby(timestamps, lambda x: x.strftime("%d/%m/%Y"))]
+    max_size = len(res)
+    X = [x[0].strftime("%d/%m/%Y") for x in res[:max_size]]
+    Y = [len(x) for x in res[:max_size]]
+    plt.plot(X, Y)
+    plt.xticks(rotation='vertical', fontsize=5)
+    #plt.xticks(range(len(Y)), X, rotation='vertical', fontsize=3)
+    plt.show()
+
 # ---------------------------------
 
 # Settings
