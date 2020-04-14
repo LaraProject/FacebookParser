@@ -178,23 +178,42 @@ def optimalInterval(fbConvFilename, nbMessages, step_ms, min_duration_ms, max_du
 
 # Get the number of messages per day
 from datetime import datetime
-from itertools import groupby
+from datetime import timedelta
 import matplotlib.pyplot as plt
 def msgPerDay(filenames):
+    # Import all timestamps
     timestamps = []
     for filename in filenames:
         with open(filename) as json_file:
             dataRaw = json.load(json_file)
             timestamps += [datetime.fromtimestamp(float(msg['timestamp_ms'])/1000.) for msg in dataRaw['messages']]
-    timestamps = sorted(list(dict.fromkeys(timestamps)))
+    timestamps = sorted(set(timestamps))
+    # Give some statistics
+    print(str(len(timestamps)) + " messages.")
+    min_date = min(timestamps)
+    max_date = max(timestamps)
     print("From " + min(timestamps).strftime("%d/%m/%Y") + " to "  + max(timestamps).strftime("%d/%m/%Y"))
-    res = [list(v) for i, v in groupby(timestamps, lambda x: x.strftime("%d/%m/%Y"))]
-    max_size = len(res)
-    X = [x[0].strftime("%d/%m/%Y") for x in res[:max_size]]
-    Y = [len(x) for x in res[:max_size]]
+    # Add the data in a dictionnary
+    res = {}
+    for msg in timestamps:
+        cur_day = msg.replace(hour=0, minute=0, second=0, microsecond=0)
+        if cur_day not in res:
+            res[cur_day] = 0
+        else:
+            res[cur_day] += 1
+    # Add missing dates
+    cur_date = min_date
+    while cur_date <= max_date:
+        cur_day = cur_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        if cur_day not in res:
+            res[cur_day] = 0
+        cur_date += timedelta(days=1)
+    # Prepare matplotlib
+    lists = sorted(res.items())
+    X, Y = zip(*lists)
+    # Plot everything
     plt.plot(X, Y)
-    plt.xticks(rotation='vertical', fontsize=5)
-    #plt.xticks(range(len(Y)), X, rotation='vertical', fontsize=3)
+    plt.xticks(rotation='vertical')
     plt.show()
 
 # ---------------------------------
