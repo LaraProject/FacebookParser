@@ -145,6 +145,10 @@ class Parser:
         except KeyError:
             return 0
 
+    # Get the number of conversations
+    def getNbConversation(self):
+        return len(self.conversations['messages'])
+
     # Export the final .json file
     def finalDump(self, filename):
         if self.debug:
@@ -152,6 +156,25 @@ class Parser:
         with open(filename, 'w') as outfile:
             json.dump(self.conversations, outfile)
 
+
+# Find the optimal interval between conversations
+def optimalInterval(fbConvFilename, nbMessages, step_ms, min_duration_ms, max_duration_ms, details=False):
+    data = []
+    best = (-1,9223372036854775807)
+    for delay in range(min_duration_ms,max_duration_ms,step_ms):
+        print("optimalInterval: Testing delay=" + str(delay/(60*1000)) + " min")
+        parser = Parser(fbConvFilename, nbMessages, delay, False, False)
+        parser.start()
+        length = parser.getNbConversation()
+        if details:
+            # Remenber the data for analysis
+            data.append((delay,length))
+        print("optimalInterval: Length of " + str(length))
+        if (length < best[1]):
+            best = (delay,length)
+    if details:
+        print(data)
+    return best[1]
 
 # ---------------------------------
 
