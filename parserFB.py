@@ -44,66 +44,53 @@ class Parser:
         self.dataRaw['messages'].sort(key=self.extract_time)
 
         # Get first timestamp
-        while timestamp == 0:
+        k = 0
+        while (timestamp == 0) and (k < len(self.dataRaw['messages'])):
             # Test if the current entry is a message (if not, the script below returns an error)
-            try:
-                msg = self.getMsg(0, 0, 0)
-                if not (msg == None):
-                    self.conversations['messages'].append(msg)
-                timestamp = int(self.dataRaw['messages'][0]['timestamp_ms'])
-                lastSender = self.dataRaw['messages'][0]['sender_name']
-            except:
-                if self.debug:
-                    print("paserFB: Initialize with the " + str(k) + "-th message.")
-                else:
-                    pass
+            msg = self.getMsg(k, 0, 0)
+            if not (isinstance(msg, int)):
+                self.conversations['messages'].append(msg)
+                timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
+                lastSender = self.dataRaw['messages'][k]['sender_name']
+            k += 1
 
         # Storing and detecting conversations
         conversationId = 0
         subConversationId = 0
         ignoreConversation = -1
         for k in range(1, self.nbMessages):
-            try:
-                # Get the number of the conversation
-                if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
-                    # Check if the previous conversation was a monologue
-                    if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
-                        self.removeConv(conversationId)
-                    conversationId += 1
-                    if (lastSender != self.dataRaw['messages'][k]['sender_name']):
-                        subConversationId = -1
-                    else:
-                        subConversationId = 0
-                    ignoreConversation = -1
-
-                # Ignore some conversation
-                if (conversationId == ignoreConversation):
-                    continue
-
-                # Update timestamp
-                timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
-
-                # Update subconversation id
-                if (lastSender != self.dataRaw['messages'][k]['sender_name']):
-                    lastSender = self.dataRaw['messages'][k]['sender_name']
-                    subConversationId += 1
-
-                # Add message to the list
-                next_msg = self.getMsg(k, conversationId, subConversationId)
-                # Remove conversations contaning invalid messages
-                if (isinstance(next_msg, int)):
+            # Get the number of the conversation
+            if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
+                # Check if the previous conversation was a monologue
+                if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
                     self.removeConv(conversationId)
-                    ignoreConversation = conversationId
+                conversationId += 1
+                if (lastSender != self.dataRaw['messages'][k]['sender_name']):
+                    subConversationId = -1
                 else:
-                    self.conversations['messages'].append(next_msg)
-            except:
-                if self.debug:
-                    print("parserFB: Problem when storing the " + str(k) + "-th message.")
-                else:
-                    pass
+                    subConversationId = 0
+                ignoreConversation = -1
 
-        # print(self.conversations)
-        # print(self.speakers)
+            # Ignore some conversation
+            if (conversationId == ignoreConversation):
+                continue
+
+            # Update timestamp
+            timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
+
+            # Update subconversation id
+            if (lastSender != self.dataRaw['messages'][k]['sender_name']):
+                lastSender = self.dataRaw['messages'][k]['sender_name']
+                subConversationId += 1
+
+            # Add message to the list
+            next_msg = self.getMsg(k, conversationId, subConversationId)
+            # Remove conversations contaning invalid messages
+            if (isinstance(next_msg, int)):
+                self.removeConv(conversationId)
+                ignoreConversation = conversationId
+            else:
+                self.conversations['messages'].append(next_msg)
 
     # Remove a conversation after it got added
     def removeConv(self, conv_id):
