@@ -190,7 +190,7 @@ def msgPerDay(filenames, exportData=False, noGraphics=False, forceDates=None):
     if forceDates != None:
         min_date, max_date = forceDates
     else:
-        min_date, max_date = min(timestamps), max(timestamps)
+        min_date, max_date = min(timestamps).replace(hour=0, minute=0, second=0, microsecond=0), max(timestamps).replace(hour=0, minute=0, second=0, microsecond=0)
     print("From " + min(timestamps).strftime("%d/%m/%Y") + " to "  + max(timestamps).strftime("%d/%m/%Y"))
     # Add the data in a dictionnary
     res = {}
@@ -220,7 +220,7 @@ def msgPerDay(filenames, exportData=False, noGraphics=False, forceDates=None):
         plt.plot(X, Y)
         plt.xticks(rotation='vertical')
         plt.show()
-    return res
+    return X,Y
 
 # ---------------------------------
 
@@ -234,3 +234,4 @@ fbConvFilename = 'conversation_LouisRiad.json'
 
 parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv)
 parser.start()
+'''
