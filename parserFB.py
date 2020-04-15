@@ -180,7 +180,7 @@ def optimalInterval(fbConvFilename, nbMessages, step_ms, min_duration_ms, max_du
 from datetime import datetime
 from datetime import timedelta
 import matplotlib.pyplot as plt
-def msgPerDay(filenames):
+def msgPerDay(filenames, exportData=False):
     # Import all timestamps
     timestamps = []
     for filename in filenames:
@@ -215,6 +215,7 @@ def msgPerDay(filenames):
     plt.plot(X, Y)
     plt.xticks(rotation='vertical')
     plt.show()
+    return res
 
 # ---------------------------------
 
