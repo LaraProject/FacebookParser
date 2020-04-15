@@ -177,37 +177,41 @@ def optimalInterval(fbConvFilename, nbMessages, step_ms, min_duration_ms, max_du
     return best[1]
 
 # Get the number of messages per day
-from datetime import datetime
-from datetime import timedelta
+import datetime
 import matplotlib.pyplot as plt
-def msgPerDay(filenames, exportData=False, noGraphics=False):
+def msgPerDay(filenames, exportData=False, noGraphics=False, forceDates=None):
     # Import all timestamps
     timestamps = []
     for filename in filenames:
         with open(filename) as json_file:
             dataRaw = json.load(json_file)
-            timestamps += [datetime.fromtimestamp(float(msg['timestamp_ms'])/1000.) for msg in dataRaw['messages']]
+            timestamps += [datetime.datetime.fromtimestamp(float(msg['timestamp_ms'])/1000.) for msg in dataRaw['messages']]
     timestamps = sorted(set(timestamps))
-    # Give some statistics
-    print(str(len(timestamps)) + " messages.")
-    min_date = min(timestamps)
-    max_date = max(timestamps)
+    if forceDates != None:
+        min_date, max_date = forceDates
+    else:
+        min_date, max_date = min(timestamps), max(timestamps)
     print("From " + min(timestamps).strftime("%d/%m/%Y") + " to "  + max(timestamps).strftime("%d/%m/%Y"))
     # Add the data in a dictionnary
     res = {}
+    length = 0
     for msg in timestamps:
         cur_day = msg.replace(hour=0, minute=0, second=0, microsecond=0)
-        if cur_day not in res:
-            res[cur_day] = 0
-        else:
-            res[cur_day] += 1
+        if (min_date <= cur_day <= max_date):
+            length += 1
+            if cur_day not in res:
+                res[cur_day] = 0
+            else:
+                res[cur_day] += 1
+    # Give some statistics
+    print(str(length) + " messages.")
     # Add missing dates
     cur_date = min_date
     while cur_date <= max_date:
         cur_day = cur_date.replace(hour=0, minute=0, second=0, microsecond=0)
         if cur_day not in res:
             res[cur_day] = 0
-        cur_date += timedelta(days=1)
+        cur_date += datetime.timedelta(days=1)
     # Prepare matplotlib
     if not noGraphics:
         lists = sorted(res.items())
