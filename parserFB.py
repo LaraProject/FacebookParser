@@ -226,12 +226,13 @@ def msgPerDay(filenames, exportData=False, noGraphics=False, forceDates=None):
 
 # Settings
  
-delayBetween2Conv = 50000  # in milliseconds
-nbMessages = 100
-fbConvFilename = 'conversation_LouisRiad.json'
+delayBetween2Conv = 60 * 1000 * 20  # 20 mins of interval
+nbMessages = 50000 # 50 000 messages
+debug = False # debugging is disabled
+withTimestamp = False # disable timestamps
+fbConvFilename = 'fb_benjamin.js'
 
 # Parser launching...
 
-parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv)
+parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv, withTimestamp, debug)
 parser.start()
-'''
