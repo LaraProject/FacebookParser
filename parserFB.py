@@ -8,11 +8,10 @@ class Parser:
 
 	dataRaw = {}
 	conversations = {}
-	speakers = {}
 	delayBetween2Conv = 0
 	nbMessages = 0
 
-	def __init__(self, fileName, nbMessages, delayBetween2Conv, withTimestamp=True, debug=False):
+	def __init__(self, fileName, nbMessages, delayBetween2Conv, answerer, withTimestamp=True, debug=False):
 		self.debug = debug
 
 		if self.debug:
@@ -20,7 +19,7 @@ class Parser:
 
 		self.delayBetween2Conv = delayBetween2Conv
 		self.withTimestamp = withTimestamp
-		self.debug = debug
+		self.answerer = answerer
 
 		with open(fileName) as json_file:
 			self.dataRaw = json.load(json_file)
@@ -28,14 +27,25 @@ class Parser:
 		self.nbMessages = min(nbMessages, len(self.dataRaw['messages']))
 
 	def start(self):
-		self.speakers['speakers'] = []
 		self.conversations['speakers'] = []
 		self.conversations['messages'] = []
 
 		# Storing speaker's names
+		if self.debug:
+			num_speakers = 0
+
 		for p in self.dataRaw['participants']:
-			self.speakers['speakers'].append(p['name'])
+			if self.debug:
+				print(p['name'] + " speaks.")
+				num_speakers += 1
 			self.conversations['speakers'].append(p['name'])
+
+		if self.debug:
+			print("There are " + str(num_speakers) + " speakers.")
+
+		if self.answerer not in self.conversations['speakers']:
+			print(answerer + " isn't in this conversation.")
+			return
 
 		lastSender = ""
 		timestamp = 0
@@ -61,6 +71,12 @@ class Parser:
 		for k in range(1, self.nbMessages):
 			# Get the number of the conversation
 			if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
+				# Check if the new conversation starts with a question
+				if self.isAnswerer(self.dataRaw['messages'][k]['sender_name']):
+					continue
+				# Check if the last conversation ended with a question
+				if self.conversations['messages'] and not self.isAnswerer(self.conversations['messages'][-1]['sender_name']):
+					del self.conversations['messages'][-1]
 				# Check if the previous conversation was a monologue
 				if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
 					self.removeConv(conversationId)
@@ -91,6 +107,10 @@ class Parser:
 				ignoreConversation = conversationId
 			else:
 				self.conversations['messages'].append(next_msg)
+
+	# Check if someone is an answerer
+	def isAnswerer(self, name):
+		return name == self.answerer
 
 	# Remove a conversation after it got added
 	def removeConv(self, conv_id):
@@ -230,9 +250,10 @@ delayBetween2Conv = 60 * 1000 * 20  # 20 mins of interval
 nbMessages = 50000 # 50 000 messages
 debug = False # debugging is disabled
 withTimestamp = False # disable timestamps
+answerer = "Louis Popi"
 fbConvFilename = 'fb_benjamin.js'
 
 # Parser launching...
 
-parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv, withTimestamp, debug)
+parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv, answerer, withTimestamp, debug)
 parser.start()
