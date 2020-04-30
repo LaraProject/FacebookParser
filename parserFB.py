@@ -67,7 +67,7 @@ class Parser:
 		# Storing and detecting conversations
 		conversationId = 0
 		subConversationId = 0
-		ignoreSubConv = (-1,-1)
+		ignoreSubConv = (-1,-1,-1)
 		for k in range(1, self.nbMessages):
 			# Check if this is an answer
 			isAnswer = self.isAnswerer(self.dataRaw['messages'][k]['sender_name'])
@@ -78,7 +78,7 @@ class Parser:
 					continue
 				# Check if the last conversation ended with a question
 				if self.conversations['messages'] and not self.isAnswerer(self.conversations['messages'][-1]['sender_name']):
-					del self.conversations['messages'][-1]
+					self.removeSubConv(self.conversations['messages'][-1]['conversationId'], self.conversations['messages'][-1]['subConversationId'])
 				# Check if the previous conversation was a monologue
 				if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
 					self.removeFullConv(conversationId)
@@ -87,7 +87,7 @@ class Parser:
 					subConversationId = -1
 				else:
 					subConversationId = 0
-					ignoreSubConv = (-1,-1)
+					ignoreSubConv = (-1,-1,-1)
 
 			# Update timestamp
 			timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
@@ -98,7 +98,7 @@ class Parser:
 				subConversationId += 1
 
 			# Check if this subconversation should be ignored
-			if subConversationId in ignoreSubConv:
+			if (conversationId == ignoreSubConv[0]) and (subConversationId in ignoreSubConv[1:]):
 				continue
 
 			# Add message to the list
@@ -106,12 +106,12 @@ class Parser:
 			# Remove conversations contaning invalid messages
 			if (isinstance(next_msg, int)):
 				if isAnswer:
-					self.removeSubConv(subConversationId-1)
-					self.removeSubConv(subConversationId)
-					ignoreSubConv = (subConversationId,-1)
+					self.removeSubConv(conversationId, subConversationId-1)
+					self.removeSubConv(conversationId, subConversationId)
+					ignoreSubConv = (conversationId, subConversationId, -1)
 				else:
-					self.removeSubConv(subConversationId)
-					ignoreSubConv = (subConversationId,subConversationId+1)
+					self.removeSubConv(conversationId, subConversationId)
+					ignoreSubConv = (conversationId, subConversationId, subConversationId+1)
 			else:
 				self.conversations['messages'].append(next_msg)
 
@@ -129,10 +129,10 @@ class Parser:
 			elif found_conversation:
 				break
 
-	def removeSubConv(self, subconv_id):
+	def removeSubConv(self, conv_id, subconv_id):
 		found_conversation = False
 		for conv in range(len(self.conversations['messages'])-1,-1,-1):
-			if (self.conversations['messages'][conv]['subConversationId'] == subconv_id):
+			if (self.conversations['messages'][conv]['subConversationId'] == subconv_id) and (self.conversations['messages'][conv]['conversationId'] == conv_id):
 				found_conversation = True
 				del self.conversations['messages'][conv]
 			elif found_conversation:
