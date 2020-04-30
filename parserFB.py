@@ -67,29 +67,27 @@ class Parser:
 		# Storing and detecting conversations
 		conversationId = 0
 		subConversationId = 0
-		ignoreConversation = -1
+		ignoreSubConv = (-1,-1)
 		for k in range(1, self.nbMessages):
+			# Check if this is an answer
+			isAnswer = self.isAnswerer(self.dataRaw['messages'][k]['sender_name'])
 			# Get the number of the conversation
 			if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
 				# Check if the new conversation starts with a question
-				if self.isAnswerer(self.dataRaw['messages'][k]['sender_name']):
+				if isAnswer:
 					continue
 				# Check if the last conversation ended with a question
 				if self.conversations['messages'] and not self.isAnswerer(self.conversations['messages'][-1]['sender_name']):
 					del self.conversations['messages'][-1]
 				# Check if the previous conversation was a monologue
 				if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
-					self.removeConv(conversationId)
+					self.removeFullConv(conversationId)
 				conversationId += 1
 				if (lastSender != self.dataRaw['messages'][k]['sender_name']):
 					subConversationId = -1
 				else:
 					subConversationId = 0
-				ignoreConversation = -1
-
-			# Ignore some conversation
-			if (conversationId == ignoreConversation):
-				continue
+					ignoreSubConv = (-1,-1)
 
 			# Update timestamp
 			timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
@@ -99,12 +97,21 @@ class Parser:
 				lastSender = self.dataRaw['messages'][k]['sender_name']
 				subConversationId += 1
 
+			# Check if this subconversation should be ignored
+			if subConversationId in ignoreSubConv:
+				continue
+
 			# Add message to the list
 			next_msg = self.getMsg(k, conversationId, subConversationId)
 			# Remove conversations contaning invalid messages
 			if (isinstance(next_msg, int)):
-				self.removeConv(conversationId)
-				ignoreConversation = conversationId
+				if isAnswer:
+					self.removeSubConv(subConversationId-1)
+					self.removeSubConv(subConversationId)
+					ignoreSubConv = (subConversationId,-1)
+				else:
+					self.removeSubConv(subConversationId)
+					ignoreSubConv = (subConversationId,subConversationId+1)
 			else:
 				self.conversations['messages'].append(next_msg)
 
@@ -113,10 +120,19 @@ class Parser:
 		return name == self.answerer
 
 	# Remove a conversation after it got added
-	def removeConv(self, conv_id):
+	def removeFullConv(self, conv_id):
 		found_conversation = False
 		for conv in range(len(self.conversations['messages'])-1,-1,-1):
 			if (self.conversations['messages'][conv]['conversationId'] == conv_id):
+				found_conversation = True
+				del self.conversations['messages'][conv]
+			elif found_conversation:
+				break
+
+	def removeSubConv(self, subconv_id):
+		found_conversation = False
+		for conv in range(len(self.conversations['messages'])-1,-1,-1):
+			if (self.conversations['messages'][conv]['subConversationId'] == subconv_id):
 				found_conversation = True
 				del self.conversations['messages'][conv]
 			elif found_conversation:
