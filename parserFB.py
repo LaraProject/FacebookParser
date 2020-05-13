@@ -2,7 +2,7 @@ import json
 import re
 import ftfy
 import unidecode
-
+import argparse
 
 class Parser:
 
@@ -260,6 +260,7 @@ def msgPerDay(filenames, exportData=False, noGraphics=False, forceDates=None):
 
 # ---------------------------------
 
+""" 
 # Settings
  
 delayBetween2Conv = 60 * 1000 * 20  # 20 mins of interval
@@ -268,6 +269,39 @@ debug = False # debugging is disabled
 withTimestamp = False # disable timestamps
 answerer = "Louis Popi"
 fbConvFilename = 'fb_benjamin.js'
+"""
+
+# ArgsList
+
+argslist = argparse.ArgumentParser(description="Faceboot data parser")
+
+argslist.add_argument('file', metavar='file', type=str, help='Path to file containing facebook data')
+
+argslist.add_argument('answerer', metavar='answerer', type=str, help='Who will answer your questions')
+
+argslist.add_argument('--nbMessages', metavar='[integer]', type=int, default=100, required=False,
+        help='Default: 100')
+
+argslist.add_argument('--debug', metavar='[True/False]', type=bool,
+        help='Default: False', default=False, required=False)
+
+argslist.add_argument('--withTimestamp', metavar='[True/False]', type=bool,
+        help='Default: False', default=False, required=False)
+
+argslist.add_argument('--delayBetween2Conv', metavar='[time_in_seconds]', type=int, 
+        help='Default: 20min ', required=False)
+
+args = argslist.parse_args()
+
+# Settings
+
+delayBetween2Conv = args.delayBetween2Conv
+nbMessages = args.nbMessages
+debug = args.debug
+withTimestamp = args.withTimestamp
+answerer = args.answerer
+fbConvFilename = args.file
+
 
 # Parser launching...
 

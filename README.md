@@ -21,14 +21,12 @@ import json
 import re
 import ftfy
 import unidecode
+import argparse
 ```
 
-Then, set up the correct settings : 
-```python
-#Settings            
-delayBetween2Conv = 50000 #in milliseconds
-nbMessages = 100
-fbConvFilename = 'conversation_LouisRiad.json'
+Usage : 
+```
+python parserFB.py file answerer
 ```
 
 Then, you can run the parser ! :)
