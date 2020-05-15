@@ -8,8 +8,6 @@ Use Python 3.5 or above
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
 
 ```bash
-pip install json
-pip install re
 pip install ftfy
 pip install unidecode
 ```

@@ -291,6 +291,10 @@ argslist.add_argument('--withTimestamp', metavar='[True/False]', type=bool,
 argslist.add_argument('--delayBetween2Conv', metavar='[time_in_seconds]', type=int, 
         help='Default: 20min ', required=False)
 
+argslist.add_argument('--export', metavar='file_export', type=str,
+        help='Default: None', required=False)
+
+
 args = argslist.parse_args()
 
 # Settings
@@ -307,3 +311,5 @@ fbConvFilename = args.file
 
 parser = Parser(fbConvFilename, nbMessages, delayBetween2Conv, answerer, withTimestamp, debug)
 parser.start()
+if len(args.export) > 0:
+	parser.finalDump(args.export)
