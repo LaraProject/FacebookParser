@@ -10,6 +10,7 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
 ```bash
 pip install ftfy
 pip install unidecode
+pip install matplotlib
 ```
 
 ## Usage

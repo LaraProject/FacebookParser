@@ -299,13 +299,24 @@ args = argslist.parse_args()
 
 # Settings
 
-delayBetween2Conv = args.delayBetween2Conv
-nbMessages = args.nbMessages
-debug = args.debug
-withTimestamp = args.withTimestamp
+if args.delayBetween2Conv:
+	delayBetween2Conv = args.delayBetween2Conv
+else:
+	delayBetween2Conv = 60 * 1000 * 20  # 20 mins of interval
+if args.nbMessages:
+	nbMessages = args.nbMessages
+else:
+	nbMessages = 100
+if args.debug:
+	debug = args.debug
+else:
+	debug = False
+if args.withTimestamp:
+	withTimestamp = args.withTimestamp
+else:
+	withTimestamp = False
 answerer = args.answerer
 fbConvFilename = args.file
-
 
 # Parser launching...
 
