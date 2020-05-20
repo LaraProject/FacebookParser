@@ -30,23 +30,6 @@ class Parser:
 		self.conversations['speakers'] = []
 		self.conversations['messages'] = []
 
-		# Storing speaker's names
-		if self.debug:
-			num_speakers = 0
-
-		for p in self.dataRaw['participants']:
-			if self.debug:
-				print(p['name'] + " speaks.")
-				num_speakers += 1
-			self.conversations['speakers'].append(p['name'])
-
-		if self.debug:
-			print("There are " + str(num_speakers) + " speakers.")
-
-		if self.answerer not in self.conversations['speakers']:
-			print(answerer + " isn't in this conversation.")
-			return
-
 		lastSender = ""
 		timestamp = 0
 
@@ -70,7 +53,10 @@ class Parser:
 		ignoreSubConv = (-1,-1,-1)
 		for k in range(1, self.nbMessages):
 			# Check if this is an answer
-			isAnswer = self.isAnswerer(self.dataRaw['messages'][k]['sender_name'])
+			sender_name = self.dataRaw['messages'][k]['sender_name']
+			if sender_name not in self.conversations['speakers']:
+				self.conversations['speakers'].append(sender_name)
+			isAnswer = self.isAnswerer(sender_name)
 			# Get the number of the conversation
 			if abs(int(self.dataRaw['messages'][k]['timestamp_ms']) - timestamp) > self.delayBetween2Conv:
 				# Check if the new conversation starts with a question
@@ -83,7 +69,7 @@ class Parser:
 				if (len(self.conversations['messages']) > 0) and (self.conversations['messages'][-1]['subConversationId'] == 0):
 					self.removeFullConv(conversationId)
 				conversationId += 1
-				if (lastSender != self.dataRaw['messages'][k]['sender_name']):
+				if (lastSender != sender_name):
 					subConversationId = -1
 				else:
 					subConversationId = 0
@@ -93,8 +79,8 @@ class Parser:
 			timestamp = int(self.dataRaw['messages'][k]['timestamp_ms'])
 
 			# Update subconversation id
-			if (lastSender != self.dataRaw['messages'][k]['sender_name']):
-				lastSender = self.dataRaw['messages'][k]['sender_name']
+			if (lastSender != sender_name):
+				lastSender = sender_name
 				subConversationId += 1
 
 			# Check if this subconversation should be ignored
@@ -114,6 +100,24 @@ class Parser:
 					ignoreSubConv = (conversationId, subConversationId, subConversationId+1)
 			else:
 				self.conversations['messages'].append(next_msg)
+
+		# If this is a group
+		if len(self.conversations['speakers']) > 2:
+			print("There are too many speakers.")
+			self.conversations['messages'] = []
+			self.conversations['speakers'] = []
+
+		# If the answerer doesn't talk
+		elif answerer not in self.conversations['speakers']:
+			print(answerer + " doesn't talk.")
+			self.conversations['messages'] = []
+			self.conversations['speakers'] = []
+
+		# If the conversation is too short
+		elif len(self.conversations['messages']) < 1:
+			print("Conversation is too short")
+			self.conversations['messages'] = []
+			self.conversations['speakers'] = []
 
 	# Check if someone is an answerer
 	def isAnswerer(self, name):
@@ -189,8 +193,9 @@ class Parser:
 	def finalDump(self, filename):
 		if self.debug:
 			print('Dumping ...')
-		with open(filename, 'w') as outfile:
-			json.dump(self.conversations, outfile)
+		if (len(self.conversations['messages']) > 0) and (len(self.conversations['speakers']) > 0):
+			with open(filename, 'w') as outfile:
+				json.dump(self.conversations, outfile)
 
 
 # Find the optimal interval between conversations
